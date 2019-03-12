@@ -1,0 +1,67 @@
+#!/usr/bin/python3
+
+import cv2
+import sys
+
+usage = f'''\
+Usage: {sys.argv[0]} <image> [output]
+
+[output] - points (csv) are stored in this file
+
+All points are shown with red dots
+<Ctrl> + left click adds a point
+
+Commands:
+    q - quit
+    u - delete last added point
+'''
+
+if len(sys.argv) < 2:
+    print(usage)
+    sys.exit(1)
+
+img0 = cv2.imread(sys.argv[1])
+img = img0.copy()
+
+pts = []
+def drawpts():
+    img = img0.copy()
+    for pt in pts:
+        cv2.circle(img, pt, 2, (0, 0, 0xff), -1)
+
+    cv2.imshow('image', img)
+
+def markpt(event, x, y, flags, param):
+    ctrl = flags & cv2.EVENT_FLAG_CTRLKEY
+
+    if ctrl and event == cv2.EVENT_LBUTTONUP:
+        pts.append((x, y))
+        print(f'point added at {x}, {y}')
+
+        drawpts()
+
+cv2.namedWindow('image')
+cv2.setMouseCallback('image', markpt)
+cv2.imshow('image', img)
+
+while True:
+    key = cv2.waitKey(50) & 0xff
+    if key == ord('q'):
+        break
+    elif key == ord('u'):
+        if len(pts) == 0:
+            continue
+
+        x, y = pts.pop()
+        print(f'point {x}, {y} removed')
+        drawpts()
+
+out = None
+if len(sys.argv) < 3:
+    out = sys.stdout
+else:
+    out = open(sys.argv[2], 'w')
+    print(f'points written to {sys.argv[2]}')
+
+for x, y in pts:
+    print(f'{x},{y}', file=out)
